@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import './index.scss';
 import axios from 'axios';
+import styles from './index.module.scss';
 
 export interface MovieType {
     id: number;
@@ -14,44 +14,54 @@ export interface MovieType {
 
 export default function MovieList() {
     const [movies, setMovies] = useState<MovieType[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         getMovies();
     }, []);
 
-    const getMovies = () => {
-        axios({
-            method: 'get',
-            url: 'https://api.themoviedb.org/3/discover/movie',
-            params: {
-                api_key: '174ac822eacf29a95798c149ea01c241',
-                language: 'pt-BR'
-            }
-        }).then(response => {
+    const getMovies = async () => {
+        try {
+            const response = await axios({
+                method: 'get',
+                url: 'https://api.themoviedb.org/3/discover/movie',
+                params: {
+                    api_key: process.env.NEXT_PUBLIC_TMDB_API_KEY || '174ac822eacf29a95798c149ea01c241',
+                    language: 'pt-BR'
+                }
+            });
             setMovies(response.data.results);
-        }).catch(error => {
+        } catch (error) {
             console.error("Error fetching movies:", error);
-        });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    if (isLoading) {
+        return <div className={styles.loading}>Carregando...</div>;
     }
 
     return (
-        <ul className='movie-list'>
+        <ul className={styles.movieList}>
             {movies.map((movie) =>
-                <li key={movie.id} className='movie-card'>
-                    <div className='movie-poster'>
+                <li key={movie.id} className={styles.movieCard}>
+                    <div className={styles.moviePoster}>
                         <img
                             src={`https://image.tmdb.org/t/p/original${movie.poster_path}`}
                             alt={movie.title}
                         />
                     </div>
-                    <div className='movie-info'>
-                        <p className='movie-title'>
+                    <div className={styles.movieInfo}>
+                        <p className={styles.movieTitle}>
                             {movie.title}
                         </p>
-                        <p className='description'>
-                            {movie.overview}
-                        </p>
-                        <p className='rating'>
+                        {movie.overview.length > 0 && (
+                            <p className={styles.description}>
+                                {movie.overview}
+                            </p>
+                        )}
+                        <p className={styles.rating}>
                            Rating: {movie.vote_average}
                         </p>
                     </div>
